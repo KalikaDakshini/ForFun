@@ -1,0 +1,15 @@
+# Compiled object files
+*.o
+*.a
+
+# Python bytecode
+*.py[cod]
+__pycache__/
+
+# Build and output directories
+build/
+out/
+in/
+
+# Random text files
+*.txt
