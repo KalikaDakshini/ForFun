@@ -1,12 +1,18 @@
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
 #include "ac.hpp"
 
-int main()
+int main(int argc, const char *argv[])
 {
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <filename>\n";
+    return EXIT_FAILURE;
+  }
+
   // Initiate autocomplete system
-  AutoComplete system("./word_map.csv");
+  AutoComplete system(argv[1]);
 
   std::string word;
   while (std::cin >> word) {
@@ -19,5 +25,5 @@ int main()
     std::cout << '\n';
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
