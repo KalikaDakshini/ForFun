@@ -15,7 +15,9 @@ public:
   /**
    * @brief Correct the word to the closest match in dictionary
    */
-  void correct(const std::string &word, std::size_t distance = 2);
+  void correct(
+    const std::string &word, std::size_t distance = 3, std::size_t count = 5
+  );
 };
 
 #endif

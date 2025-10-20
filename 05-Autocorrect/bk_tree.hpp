@@ -1,6 +1,7 @@
 #ifndef BK_TREE_H
 #define BK_TREE_H
 
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -10,6 +11,15 @@
 struct Word {
   std::string entry;
   std::size_t freq;
+  std::size_t dist;
+
+  // Return the Bayes' metric
+  double metric(const std::string &word, double alpha = 0.0) const
+  {
+    double len_boost = (word.length() == entry.length()) ? 3 : 0;
+    double start_boost = (entry.starts_with(word[0])) ? 5 : 0;
+    return log(freq + 1) - alpha * dist + len_boost + start_boost;
+  }
 };
 
 class BkTree

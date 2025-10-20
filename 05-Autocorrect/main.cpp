@@ -14,6 +14,7 @@ int main(int argc, const char *argv[1])
 
   while (true) {
     std::string word;
+    std::cout << "Input: ";
     std::cin >> word;
     ac.correct(word);
   }

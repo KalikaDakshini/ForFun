@@ -83,6 +83,7 @@ void BkTree::BkNode::search(
 {
   auto dist = levenshtein_dist(this->word_.entry, word);
   if (dist <= max_distance) {
+    this->word_.dist = dist;
     words.push_back(this->word_);
   }
 

@@ -37,18 +37,20 @@ AutoCorrect::AutoCorrect(const std::string &freq_path)
   }
 }
 
-void AutoCorrect::correct(const std::string &word, std::size_t distance)
+void AutoCorrect::correct(
+  const std::string &word, std::size_t distance, std::size_t count
+)
 {
   auto words = this->wordtree_.search(word, distance);
 
   std::cout << "Suggestions: ";
   // Sort the words
-  std::ranges::sort(words, [](const auto &w1, const auto &w2) {
-    return w1.freq > w2.freq;
+  std::ranges::sort(words, [&word](const auto &w1, const auto &w2) {
+    return w1.metric(word) > w2.metric(word);
   });
 
   // Print the top 3 words in terms of frequency
-  for (const auto &word : words | std::views::take(3)) {
+  for (const auto &word : words | std::views::take(count)) {
     std::cout << word.entry << ", ";
   }
 
