@@ -10,6 +10,7 @@ __pycache__/
 build/
 out/
 in/
+.vscode/
 
 # Random text files
 *.txt
