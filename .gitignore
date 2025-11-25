@@ -1,5 +1,7 @@
 # Compiled object files
 *.o
+*.hh
+*.cc
 *.out
 *.a
 

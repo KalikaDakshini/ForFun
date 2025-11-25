@@ -1,0 +1,5 @@
+# Generated files
+*.app
+*.hh
+*.cc
+*.o
