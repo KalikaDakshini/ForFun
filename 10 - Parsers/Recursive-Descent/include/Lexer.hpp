@@ -9,6 +9,8 @@ enum class TokenKind {
   MUL,
   INT,
   FLOAT,
+  LPAREN,
+  RPAREN,
   EOL,
 };
 
@@ -53,6 +55,14 @@ struct Token {
       out << "OP(*)";
     }
 
+    else if (t.kind == TokenKind::LPAREN) {
+      out << "LPAREN";
+    }
+
+    else if (t.kind == TokenKind::RPAREN) {
+      out << "RPAREN";
+    }
+
     else if (t.kind == TokenKind::EOL) {
       out << "EOL";
     }
@@ -72,6 +82,7 @@ private:
   void skip_space();
   Token get_number();
   Token get_op();
+  Token get_paren();
 };
 
 #endif

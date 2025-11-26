@@ -18,14 +18,21 @@ private:
   std::size_t cursor_;
 
   // Functions defining a right-recursive grammar
-  bool final();
-  bool line();
   bool expr();
   bool term();
   bool expr1();
 
   // Helper methods
   void build_tokens();
+
+  bool is_lparen() { return is_paren(TokenKind::LPAREN); }
+
+  bool is_rparen() { return is_paren(TokenKind::RPAREN); }
+
+  bool is_paren(TokenKind paren)
+  {
+    return tok_list_[cursor_++].kind == paren;
+  }
 
   bool is_op()
   {

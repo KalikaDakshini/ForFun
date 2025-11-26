@@ -24,6 +24,11 @@ Token Lexer::next()
     return get_op();
   }
 
+  // Parantheses
+  if (std::string("()").find(ch) != std::string::npos) {
+    return get_paren();
+  }
+
   // Numbers
   if (std::isdigit(val) != 0 || ch == '.') {
     return get_number();
@@ -41,6 +46,17 @@ void Lexer::skip_space()
   while (std::isspace(this->stream_.peek()) != 0) {
     this->stream_.get();
   }
+}
+
+Token Lexer::get_paren()
+{
+  int const val = this->stream_.get();
+  char const ch = static_cast<char>(val);
+
+  if (ch == '(') {
+    return Token{TokenKind::LPAREN};
+  }
+  return Token{TokenKind::RPAREN};
 }
 
 Token Lexer::get_op()

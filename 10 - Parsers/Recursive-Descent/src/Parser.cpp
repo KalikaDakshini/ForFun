@@ -44,5 +44,8 @@ bool Parser::expr1()
 
 bool Parser::term()
 {
+  if (lookahead() == TokenKind::LPAREN) {
+    return (is_lparen() && expr() && is_rparen());
+  }
   return this->is_num();
 }

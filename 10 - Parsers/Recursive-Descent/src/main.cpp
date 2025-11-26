@@ -6,7 +6,7 @@
 int main()
 {
   // Parser test
-  // std::stringstream ss{"2 + 3\n 2.0 + 3 * 5.0\n"};
+  // std::stringstream ss{"2 + 3\n 2.0 + (3 * 5.0)\n"};
   Lexer lexer{std::cin};
   Parser parser(lexer);
 

@@ -28,7 +28,7 @@ E : T E'
 
 E' : + E | * E | null
 
-T : num
+T : num | ( E )
 ```
 
 ## Main Language
