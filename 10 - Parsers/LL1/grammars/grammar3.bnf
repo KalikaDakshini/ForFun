@@ -1,0 +1,15 @@
+// 1. Comments start with '//'
+// 2. First two lines dictate nterms and terms respectively
+// 3. Grammar follows BNF notation. Expected to be left-factored
+// 4. First non-term should be the start symbol
+// 5. Production rules are expected to be on a single line
+// 6. Not following the rules will result in undefined behaviour
+
+%nterm expr A B
+%term num float
+
+expr: A | B |
+
+A : num
+
+B : float

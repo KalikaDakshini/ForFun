@@ -1,0 +1,20 @@
+%lex
+
+%%
+
+\s+ return /* ws */
+\d+ return "number"
+
+/lex
+
+%%
+
+expr : term sub_expr;
+
+sub_expr : + term sub_expr | ; 
+
+term : factor sub_term;
+
+sub_term : * factor sub_term | ;
+
+factor : num | ( expr ) ;
