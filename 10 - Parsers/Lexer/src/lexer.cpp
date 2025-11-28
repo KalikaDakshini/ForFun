@@ -3,15 +3,6 @@
 
 #include <cassert>
 #include <string>
-#include <string_view>
-
-Lexer::Lexer() : core_(this->build())
-{}
-
-bool Lexer::lex(std::string_view input)
-{
-  return this->core_.test(input);
-}
 
 // ======= Helper Methods ======= //
 NFA Lexer::build()

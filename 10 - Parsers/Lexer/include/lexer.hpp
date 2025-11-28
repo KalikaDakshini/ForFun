@@ -2,23 +2,17 @@
 
 #include <deque>
 #include <string>
-#include <string_view>
 
 struct Lexer {
-  // Constructor
-  Lexer();
-
   /**
-   * @brief Return true if input matches the rules
+   * @brief Bulid a NFA according to rules
    */
-  bool lex(std::string_view input);
+  NFA build(/* Build according to a set of rules */);
 
 private:
   std::deque<State> storage_;
-  NFA core_;
 
   // ======= Helper Methods ======= //
-  NFA build(/* Build according to a set of rules */);
 
   // ======= Factory Methods ======= //
   // Build states for NFA to use
