@@ -1,8 +1,10 @@
 #include "factory.hpp"
 #include "nfa.hpp"
+#include "processor.hpp"
 
 #include <cassert>
 #include <string_view>
+#include <vector>
 
 namespace Kalika
 {
@@ -12,20 +14,70 @@ namespace Kalika
     return nfa;
   }
 
-  NFA Factory::build(std::string_view regex)
-  {
-    (void)regex;
-    // return alteration(make_char('A'), make_char('B'));
-    return alteration(
-      make_char('0'),
-      concatenate(char_class('1', '9'), kleene(char_class('0', '9')))
-    );
-  }
-
   NFAState* Factory::make_state(bool final)
   {
     auto& ref = this->storage_.emplace_back(final);
     return &ref;
+  }
+
+  NFA Factory::build(std::string_view regex)
+  {
+    auto token_stack = process(regex);
+    return eval(token_stack);
+  }
+
+  NFA Factory::eval(std::vector<Token> const& token_stack)
+  {
+    std::vector<NFA> nfa_stack;
+
+    for (auto const& token : token_stack) {
+      // Push chars onto the stack
+      if (token.kind == TokenKind::CHAR) {
+        nfa_stack.push_back(make_char(token.val));
+        continue;
+      }
+      // Create machine for operand
+      switch (token.kind) {
+      case TokenKind::ALTER: {
+        auto nfa_b = nfa_stack.back();
+        nfa_stack.pop_back();
+        auto nfa_a = nfa_stack.back();
+        nfa_stack.pop_back();
+        nfa_stack.push_back(alteration(nfa_a, nfa_b));
+        break;
+      }
+      case TokenKind::CONCAT: {
+        auto nfa_b = nfa_stack.back();
+        nfa_stack.pop_back();
+        auto nfa_a = nfa_stack.back();
+        nfa_stack.pop_back();
+        nfa_stack.push_back(concatenate(nfa_a, nfa_b));
+        break;
+      }
+      case TokenKind::IF: {
+        auto nfa_a = nfa_stack.back();
+        nfa_stack.pop_back();
+        nfa_stack.push_back(one_or_none(nfa_a));
+        break;
+      }
+      case TokenKind::PLUS: {
+        auto nfa_a = nfa_stack.back();
+        nfa_stack.pop_back();
+        nfa_stack.push_back(plus(nfa_a));
+        break;
+      }
+      case TokenKind::KLEENE: {
+        auto nfa_a = nfa_stack.back();
+        nfa_stack.pop_back();
+        nfa_stack.push_back(kleene(nfa_a));
+        break;
+      }
+      default:
+        break;
+      }
+    }
+
+    return nfa_stack.back();
   }
 
   NFA Factory::make_char(char ch)
@@ -46,13 +98,6 @@ namespace Kalika
     return make_char(eps);
   }
 
-  template<typename Arg, typename... Args>
-  requires(sizeof...(Args) >= 1)
-  NFA Factory::concatenate(Arg a, Arg b, Args... args)
-  {
-    return concatenate(concatenate(a, b), args...);
-  }
-
   NFA Factory::concatenate(const NFA& A, const NFA& B)
   {
     auto* a_start = A.start();
@@ -71,13 +116,6 @@ namespace Kalika
     nfa.add_alphabet(B);
 
     return nfa;
-  }
-
-  template<typename Arg, typename... Args>
-  requires(sizeof...(Args) >= 1)
-  NFA Factory::alteration(Arg a, Arg b, Args... args)
-  {
-    return alteration(alteration(a, b), args...);
   }
 
   NFA Factory::alteration(const NFA& A, const NFA& B)

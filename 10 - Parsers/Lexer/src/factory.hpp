@@ -2,9 +2,11 @@
 #define FACTORY_H
 
 #include "nfa.hpp"
+#include "processor.hpp"
 
 #include <deque>
 #include <string_view>
+#include <vector>
 
 namespace Kalika
 {
@@ -15,8 +17,12 @@ namespace Kalika
     std::deque<NFAState> storage_;
 
     // ======= Helper Methods ======= //
-    NFA build(std::string_view regex);
+    // Make a state for the NFA
     NFAState* make_state(bool final = false);
+    // Build the NFA from regex
+    NFA build(std::string_view regex);
+    // Evaluate the regex RPN expression to build the NFA
+    NFA eval(std::vector<Token> const& token_stack);
 
     // ======= Basic Machines ======= //
     NFA make_char(char ch);
@@ -24,14 +30,8 @@ namespace Kalika
 
     // ========= Operations ========= //
     // Concatenation AB
-    template<typename Arg, typename... Args>
-    requires(sizeof...(Args) >= 1)
-    NFA concatenate(Arg a, Arg b, Args... args);
     NFA concatenate(const NFA& A, const NFA& B);
     // Alteration A|B
-    template<typename Arg, typename... Args>
-    requires(sizeof...(Args) >= 1)
-    NFA alteration(Arg a, Arg b, Args... args);
     NFA alteration(const NFA& A, const NFA& B);
     // Kleene-Closure: A*
     NFA kleene(const NFA& A);
