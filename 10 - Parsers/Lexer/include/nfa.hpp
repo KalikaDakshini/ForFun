@@ -2,6 +2,7 @@
 #define NFA_H
 
 #include <concepts>
+#include <cstddef>
 #include <deque>
 #include <set>
 #include <string>
@@ -79,6 +80,16 @@ struct NFA {
    * @brief Update the current nfa's alphabet
    */
   void add_alphabet(char ch);
+  //TODO(kalika): Implement build_table()
+  /**
+   * @brief Build transition table used for DFA generation
+   */
+  void build_table();
+
+  /**
+   * @brief Return the number of states used by NFA
+   */
+  std::size_t size() const { return this->storage_.size(); }
 
 private:
   NFAState* start_;

@@ -24,6 +24,9 @@ void NFA::add_alphabet(char ch)
   }
 }
 
+void NFA::build_table()
+{}
+
 // ======== NFAState methods ======== //
 // Add a transition (ch -> state)
 void NFAState::add_transition(char ch, NFAState* state)

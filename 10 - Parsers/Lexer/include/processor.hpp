@@ -26,8 +26,7 @@ namespace Kalika
 
   constexpr auto NUM_TOKENS = static_cast<std::size_t>(TokenKind::COUNT);
 
-  // TODO: Implement Character classes
-  // TODO: Fix binary operator appearing after unary operators
+  //TODO(kalika): Implement Character classes
   struct Token {
     char val;
     TokenKind kind;
