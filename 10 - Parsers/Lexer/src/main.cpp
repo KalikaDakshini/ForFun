@@ -1,19 +1,26 @@
 #include <array>
+#include <cstddef>
 #include <iostream>
 
-#include "NFA.hpp"
-#include "lexer.hpp"
+#include "factory.hpp"
 
 int main()
 {
-  std::array<char const*, 4> const inputs{"0", "19", "002", "ABCD"};
+  constexpr std::size_t TEST_SIZE = 4;
+  std::array<char const*, TEST_SIZE> const inputs = {
+    "0", "20", "A", "INVALID"
+  };
+  std::array<bool, TEST_SIZE> const outputs = {true, true, false, false};
 
-  // Create machine
-  Lexer factory;
-  NFA lexer = factory.build();
+  Kalika::Factory factory;
+  auto lexer = factory.get("");
 
-  for (auto const& input : inputs) {
-    std::cout << input << ": "
-              << (lexer.test(input) ? "Accepted" : "Rejected") << '\n';
+  for (auto idx = 0UL; idx < TEST_SIZE; idx++) {
+    std::cout << inputs[idx] << ": "
+              << (lexer.test(inputs[idx]) == outputs[idx] ? "Passed"
+                                                          : "Failed")
+              << '\n';
   }
+
+  return 0;
 }
