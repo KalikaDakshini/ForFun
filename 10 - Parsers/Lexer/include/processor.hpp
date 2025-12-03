@@ -9,7 +9,6 @@
 
 namespace Kalika
 {
-  char const concat = '.';
 
   enum class TokenKind : std::int8_t {
     // Ordered in order of precedence
@@ -26,7 +25,8 @@ namespace Kalika
 
   constexpr auto NUM_TOKENS = static_cast<std::size_t>(TokenKind::COUNT);
 
-  //TODO(kalika): Implement Character classes
+  //TODO(kalika): Implement Character classes [a-zA-Z]
+  //TOOD(kalika): Implement aliases \s \w etc..
   struct Token {
     char val;
     TokenKind kind;

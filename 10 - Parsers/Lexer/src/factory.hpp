@@ -1,6 +1,7 @@
 #ifndef FACTORY_H
 #define FACTORY_H
 
+#include "frag.hpp"
 #include "nfa.hpp"
 #include "processor.hpp"
 
@@ -10,39 +11,52 @@
 
 namespace Kalika
 {
-  struct Factory {
-    NFA get(std::string_view regex);
+  namespace internal
+  {
+    /**
+     * @brief Factory to build NFAs
+     */
+    struct Factory {
+      std::deque<NFAState> storage;
+      Frag get(std::string_view regex);
 
-  private:
-    std::deque<NFAState> storage_;
+    private:
+      // ======= Helper Methods ======= //
+      // Make a state for the Frag
+      size_t make_state(bool final = false);
+      // Build the Frag from regex
+      Frag build(std::string_view regex);
+      // Evaluate the regex RPN expression to build the Frag
+      Frag eval(std::vector<Token> const& token_stack);
+      // Assign names to states
+      void assign_names();
 
-    // ======= Helper Methods ======= //
-    // Make a state for the NFA
-    NFAState* make_state(bool final = false);
-    // Build the NFA from regex
-    NFA build(std::string_view regex);
-    // Evaluate the regex RPN expression to build the NFA
-    NFA eval(std::vector<Token> const& token_stack);
+      // ======= Basic Machines ======= //
+      Frag literal(char ch);
+      Frag epsilon();
 
-    // ======= Basic Machines ======= //
-    NFA make_char(char ch);
-    NFA make_epsilon();
+      // ========= Operations ========= //
+      // Concatenation AB
+      Frag concatenate(Frag const& A, Frag const& B);
+      // Alteration A|B
+      Frag alteration(Frag const& A, Frag const& B);
+      // Kleene-Closure: A*
+      Frag kleene(Frag const& A);
+      // One or More: A+
+      Frag plus(Frag const& A);
+      // Or: A?
+      Frag one_or_none(Frag const& A);
+      // Character class: [a-b]
+      Frag char_class(char a, char b);
+    };
 
-    // ========= Operations ========= //
-    // Concatenation AB
-    NFA concatenate(const NFA& A, const NFA& B);
-    // Alteration A|B
-    NFA alteration(const NFA& A, const NFA& B);
-    // Kleene-Closure: A*
-    NFA kleene(const NFA& A);
-    // One or More: A+
-    NFA plus(const NFA& A);
-    // Or: A?
-    NFA one_or_none(const NFA& A);
-    // Character class: [a-b]
-    NFA char_class(char a, char b);
-  };
+  }  //namespace internal
 
+  /**
+   * @brief Builds an nfa matching the regular expression
+   * @param regexp regular expression in general regex format
+   */
+  NFA make_nfa(std::string_view regexp);
 };  //namespace Kalika
 
 #endif

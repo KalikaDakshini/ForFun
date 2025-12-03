@@ -1,6 +1,5 @@
 #include "processor.hpp"
 
-#include <cctype>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -70,11 +69,12 @@ namespace Kalika
     };
     auto can_begin = [](char ch) { return is_char(ch) || ch == '('; };
 
-    for (auto i = 0UL; i + 1 < input.length(); ++i) {
+    for (auto i = 0UL; i + 1 < input.length(); i++) {
       char const a = input[i];
       char const b = input[i + 1];
 
       out_str.push_back(a);
+      // Make the implicit concatenation operator, explicit
       if (can_end(a) && can_begin(b)) {
         out_str.push_back('.');
       }
@@ -92,7 +92,7 @@ namespace Kalika
     switch (ch) {
     case '|':
       return Token{.val = ch, .kind = TokenKind::ALTER};
-    case concat:
+    case '.':
       return Token{.val = ch, .kind = TokenKind::CONCAT};
     case '?':
       return Token{.val = ch, .kind = TokenKind::IF};
@@ -111,6 +111,6 @@ namespace Kalika
 
   bool is_char(char ch)
   {
-    return static_cast<bool>(std::isalnum(ch));
+    return std::string("[]()+-*|.").find(ch) == std::string::npos;
   }
 }  //namespace Kalika

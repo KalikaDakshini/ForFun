@@ -1,8 +1,6 @@
 #ifndef NFA_H
 #define NFA_H
 
-#include <concepts>
-#include <cstddef>
 #include <deque>
 #include <set>
 #include <string>
@@ -10,92 +8,72 @@
 #include <unordered_map>
 #include <utility>
 
-static constexpr char eps = '\0';
+namespace Kalika
+{
 
-struct NFAState {
-  bool final;
-  std::string name{};
-  std::unordered_map<char, std::set<NFAState*>> transitions_;
+  template<typename T, typename U> using umap = std::unordered_map<T, U>;
+  using std::size_t;
 
-  explicit NFAState(bool state_final = false) : final(state_final) {}
+  static constexpr char const EPS = '\0';
 
-  /**
-   * @brief Toggle the final status of the state
-   */
-  void toggle() { this->final = !final; }
-
-  /**
-   * @brief Set the name object
-   */
-  void set_name(std::string state_name)
+  namespace internal
   {
-    this->name = std::move(state_name);
-  }
+
+    /**
+     * @brief Describes a single state of the NFA
+     */
+    struct NFAState {
+      bool final;
+      std::string name;
+
+      explicit NFAState(bool state_final = false) : final(state_final) {}
+
+      /**
+       * @brief Toggle the final status of the state
+       */
+      void toggle() { this->final = !final; }
+
+      /**
+       * @brief Set the name object
+       */
+      void set_name(std::string state_name)
+      {
+        this->name = std::move(state_name);
+      }
+
+      /**
+       * @brief Add a transition to the state
+       */
+      void add_transition(char ch, NFAState* state_idx);
+
+      /**
+       * @brief Check if state accepts input
+       */
+      bool test(std::string_view input, std::size_t idx) const;
+
+      /**
+       * @brief Return all transitions from a state
+       */
+      [[nodiscard]] std::set<NFAState*> get_transition(char ch) const;
+
+    private:
+      umap<char, std::set<NFAState*>> transitions_;
+      std::set<size_t> closure_set_;
+    };
+
+  }  //namespace internal
 
   /**
-   * @brief Add a transition to the state
+   * @brief Describes a NFA
    */
-  void add_transition(char ch, NFAState* state);
+  struct NFA {
+    std::deque<internal::NFAState> storage;
+    std::set<char> alphabet;
+    size_t start;
+    size_t end;
 
-  /**
-   * @brief Return all transitions from a state
-   */
-  std::set<NFAState*> get_transition(char ch) const;
+    [[nodiscard]] bool test(std::string_view input) const;
+  };
+}  //namespace Kalika
 
-  /**
-   * @brief Test whether the machine accepts the input
-   */
-  bool test(
-    std::string_view input,
-    std::size_t idx,
-    std::set<std::pair<NFAState const*, std::size_t>>& visited
-  ) const;
-};
-
-struct NFA;
-template<typename T>
-concept IsNFA = std::same_as<std::remove_cvref_t<T>, NFA>;
-
-/**
- * @brief NFA with a single start state and a single end state
- */
-struct NFA {
-  NFA(NFAState* start, NFAState* end) : start_(start), end_(end) {}
-
-  /**
-   * @brief Test whether the machine accepts the input
-   */
-  bool test(std::string_view input) const;
-
-  // Accessor methods
-  NFAState* start() const { return this->start_; }
-
-  NFAState* end() const { return this->end_; }
-
-  /**
-   * @brief Add alphabet from nfa to current machine
-   */
-  void add_alphabet(const NFA& nfa);
-  /**
-   * @brief Update the current nfa's alphabet
-   */
-  void add_alphabet(char ch);
-  //TODO(kalika): Implement build_table()
-  /**
-   * @brief Build transition table used for DFA generation
-   */
-  void build_table();
-
-  /**
-   * @brief Return the number of states used by NFA
-   */
-  std::size_t size() const { return this->storage_.size(); }
-
-private:
-  NFAState* start_;
-  NFAState* end_;
-
-  std::deque<NFAState> storage_;
-  std::set<char> alphabet_;
-};
 #endif
