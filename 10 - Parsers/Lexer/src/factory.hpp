@@ -7,6 +7,7 @@
 
 #include <deque>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace Kalika
@@ -28,8 +29,6 @@ namespace Kalika
       Frag build(std::string_view regex);
       // Evaluate the regex RPN expression to build the Frag
       Frag eval(std::vector<Token> const& token_stack);
-      // Assign names to states
-      void assign_names();
 
       // ======= Basic Machines ======= //
       Frag literal(char ch);
@@ -56,7 +55,8 @@ namespace Kalika
    * @brief Builds an nfa matching the regular expression
    * @param regexp regular expression in general regex format
    */
-  StateMachine make_nfa(std::string_view regexp);
+  std::variant<NFA, DFA>
+  make_nfa(std::string_view regexp, bool is_dfa = true);
 };  //namespace Kalika
 
 #endif

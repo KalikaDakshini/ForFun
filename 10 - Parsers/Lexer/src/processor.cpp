@@ -8,104 +8,119 @@ namespace Kalika
 {
   std::vector<Token> process(std::string_view input)
   {
-    std::vector<Token> token_stack;
-    std::vector<Token> op_stack;
+    std::vector<Token> out;
+    std::vector<Token> ops;
 
-    for (auto ch : pre_process(input)) {
+    for (auto const& tok : tokenize(input)) {
       // Add chars to token stack
-      if (is_char(ch)) {
-        token_stack.emplace_back(ch, TokenKind::CHAR);
+      if (tok.kind == TokenKind::CHAR) {
+        out.push_back(tok);
         continue;
       }
-      // Add operators to operator stack following precedence
-      auto op_token = get_token(ch);
-
+      // Just push LPAREN on top of the stack
+      if (tok.is_lparen()) {
+        ops.push_back(tok);
+        continue;
+      }
       // Handle paranthesis
-      if (op_token.is_rparen()) {
-        auto top_token = op_stack.back();
-        while (!top_token.is_lparen()) {
-          token_stack.push_back(top_token);
-          op_stack.pop_back();
-          top_token = op_stack.back();
+      if (tok.is_rparen()) {
+        while (!ops.back().is_lparen()) {
+          out.push_back(ops.back());
+          ops.pop_back();
         }
         // Remove the left paren
-        op_stack.pop_back();
+        ops.pop_back();
         continue;
       }
-
       // Examine the top of the stack and check for precedence
-      while (!op_stack.empty()) {
-        auto top_token = op_stack.back();
-        // Move all higher precedende operators to token_stack
-        if (op_token.prec() <= top_token.prec()) {
-          op_stack.pop_back();
-          token_stack.push_back(top_token);
-        }
-        else {
-          break;
-        }
+      while (!ops.empty() && (tok.prec() <= ops.back().prec())) {
+        // Move all higher precedende operators to out
+        out.push_back(ops.back());
+        ops.pop_back();
       }
       // Add op_token to stack
-      op_stack.push_back(op_token);
+      ops.push_back(tok);
     }
 
-    // Move all remaining operators to token_stack
-    while (!op_stack.empty()) {
-      auto token = op_stack.back();
-      op_stack.pop_back();
-      token_stack.push_back(token);
+    // Move all remaining operators to out
+    while (!ops.empty()) {
+      out.push_back(ops.back());
+      ops.pop_back();
     }
 
-    return token_stack;
+    return out;
   }
 
-  std::string pre_process(std::string_view input)
+  std::vector<Token> tokenize(std::string_view input)
   {
-    std::string out_str;
+    std::vector<Token> tokens;
 
+    // Recognise end and start characters to demarcate concat
     auto can_end = [](char ch) {
-      return is_char(ch) || ch == ')' || ch == '*' || ch == '+' ||
-             ch == '?';
+      return is_char(ch) || ch == ')' || ch == ']' || ch == '*' ||
+             ch == '+' || ch == '?';
     };
-    auto can_begin = [](char ch) { return is_char(ch) || ch == '('; };
+    auto can_begin = [](char ch) {
+      return is_char(ch) || ch == '(' || ch == '[';
+    };
 
-    for (auto i = 0UL; i + 1 < input.length(); i++) {
-      char const a = input[i];
-      char const b = input[i + 1];
+    auto i = 0UL;
+    while (i++ < input.length() - 1) {
+      char const a = input[i - 1];
+      char const b = input[i];
 
-      out_str.push_back(a);
+      tokens.emplace_back(a);
       // Make the implicit concatenation operator, explicit
       if (can_end(a) && can_begin(b)) {
-        out_str.push_back('.');
+        tokens.emplace_back('.');
       }
     }
 
+    // Push the last remaining token
     if (!input.empty()) {
-      out_str.push_back(input.back());
+      tokens.emplace_back(input.back());
     }
 
-    return out_str;
+    return tokens;
   }
 
-  Token get_token(char ch)
+  // Token constructor
+  Token::Token(char ch) : val(ch)
   {
     switch (ch) {
     case '|':
-      return Token{.val = ch, .kind = TokenKind::ALTER};
+      kind = TokenKind::ALTER;
+      break;
     case '.':
-      return Token{.val = ch, .kind = TokenKind::CONCAT};
+      kind = TokenKind::CONCAT;
+      break;
+    case '-':
+      kind = TokenKind::CLASS;
+      break;
     case '?':
-      return Token{.val = ch, .kind = TokenKind::IF};
+      kind = TokenKind::IF;
+      break;
     case '+':
-      return Token{.val = ch, .kind = TokenKind::PLUS};
+      kind = TokenKind::PLUS;
+      break;
     case '*':
-      return Token{.val = ch, .kind = TokenKind::KLEENE};
+      kind = TokenKind::KLEENE;
+      break;
     case '(':
-      return Token{.val = ch, .kind = TokenKind::LPAREN};
+      kind = TokenKind::LPAREN;
+      break;
     case ')':
-      return Token{.val = ch, .kind = TokenKind::RPAREN};
+      kind = TokenKind::RPAREN;
+      break;
+    case '[':
+      kind = TokenKind::LBRAC;
+      break;
+    case ']':
+      kind = TokenKind::RBRAC;
+      break;
     default:
-      return Token{.val = ch, .kind = TokenKind::CHAR};
+      kind = TokenKind::CHAR;
+      break;
     }
   }
 

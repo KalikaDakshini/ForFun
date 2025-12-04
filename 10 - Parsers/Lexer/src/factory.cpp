@@ -3,11 +3,10 @@
 #include "processor.hpp"
 #include "state_machine.hpp"
 
-#include <algorithm>
 #include <cassert>
-#include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace Kalika
@@ -21,21 +20,22 @@ namespace Kalika
 
     size_t Factory::make_state(bool final)
     {
-      this->storage.emplace_back(final);
-      return this->storage.size() - 1;
+      auto index = this->storage.size();
+      this->storage.emplace_back(index, final);
+      return index;
     }
 
+    // Build an NFA from regex
     Frag Factory::build(std::string_view regex)
     {
       // Create frag from regex
       auto token_stack = process(regex);
       auto frag = eval(token_stack);
 
-      // Assign names to frag states
-      this->assign_names();
       return frag;
     }
 
+    // Evaluate the RPN expression
     Frag Factory::eval(std::vector<Token> const& token_stack)
     {
       std::vector<Frag> frag_stack;
@@ -88,15 +88,6 @@ namespace Kalika
       }
 
       return frag_stack.back();
-    }
-
-    void Factory::assign_names()
-    {
-      std::ranges::for_each(
-        this->storage, [idx = 0](State& state) mutable {
-          state.set_name(std::to_string(idx++));
-        }
-      );
     }
 
     Frag Factory::literal(char ch)
@@ -185,7 +176,10 @@ namespace Kalika
       f_start.add_transition(EPS, &f_end);
       a_end.add_transition(EPS, &f_end);
 
-      return A;
+      Frag frag{start_idx, end_idx};
+      frag.add_alphabet(A);
+
+      return frag;
     }
 
     // One or More: A+
@@ -232,16 +226,26 @@ namespace Kalika
 
   }  //namespace internal
 
-  StateMachine make_nfa(std::string_view regexp)
+  std::variant<NFA, DFA> make_nfa(std::string_view regexp, bool is_dfa)
   {
     internal::Factory f;
     auto frag = f.get(regexp);
 
-    return {
+    NFA nfa{
       .storage = std::move(f.storage),
       .alphabet = std::move(frag.alphabet),
       .start = frag.start(),
       .end = frag.end(),
     };
+
+    nfa.print_stats();
+
+    if (nfa.storage.size() > 100 || is_dfa) {
+      auto dfa = DFA(nfa);
+      dfa.print_stats();
+      return dfa;
+    }
+
+    return nfa;
   }
 }  //namespace Kalika

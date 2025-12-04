@@ -14,12 +14,15 @@ namespace Kalika
     // Ordered in order of precedence
     CHAR,    // a
     ALTER,   // a|b
-    CONCAT,  // a-b
+    CONCAT,  // a.b
+    CLASS,   //a-z
     IF,      // a?
     PLUS,    // a+
     KLEENE,  // a*
     LPAREN,  // (
     RPAREN,  // )
+    LBRAC,   // [
+    RBRAC,   // ]
     COUNT    // Token Count
   };
 
@@ -28,6 +31,8 @@ namespace Kalika
   //TODO(kalika): Implement Character classes [a-zA-Z]
   //TOOD(kalika): Implement aliases \s \w etc..
   struct Token {
+    Token(char ch);
+
     char val;
     TokenKind kind;
 
@@ -43,17 +48,19 @@ namespace Kalika
 
     [[nodiscard]] bool is_lparen() const
     {
-      return this->kind == TokenKind::LPAREN;
+      return this->kind == TokenKind::LPAREN ||
+             this->kind == TokenKind::LBRAC;
     }
 
     [[nodiscard]] bool is_rparen() const
     {
-      return this->kind == TokenKind::RPAREN;
+      return this->kind == TokenKind::RPAREN ||
+             this->kind == TokenKind::RBRAC;
     }
 
   private:
     static constexpr std::array<std::uint8_t, NUM_TOKENS> prec_id = {
-      0, 1, 2, 3, 3, 3, 0, 0
+      0, 1, 2, 3, 3, 3, 3, 0, 0, 0, 0
     };
   };
 
@@ -62,9 +69,7 @@ namespace Kalika
    */
   std::vector<Token> process(std::string_view input);
   // Add concatenation operators to the string
-  std::string pre_process(std::string_view input);
-  // Return an operator token
-  Token get_token(char ch);
+  std::vector<Token> tokenize(std::string_view input);
 
   // Check if character is not an operator
   bool is_char(char ch);

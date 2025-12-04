@@ -1,11 +1,19 @@
 #include "state_machine.hpp"
 
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <ranges>
 #include <set>
+#include <sstream>
+#include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace Kalika
 {
+
   namespace internal
   {
     // ======== State methods ======== //
@@ -77,12 +85,204 @@ namespace Kalika
 
       return closure_set_;
     }
+
+    // ======== DFAState methods ======== //
+    // Add a transition (ch -> state)
+    void DFAState::add_transition(char ch, size_t state)
+    {
+      this->transitions_[ch] = state;
+    }
+
+    // Get transitions
+    size_t DFAState::get_transition(char ch) const
+    {
+      // Every state in DFA has a transition for every alphabet
+      return this->transitions_.at(ch);
+    }
   }  //namespace internal
 
-  bool StateMachine::match(std::string_view input) const
+  // ======== NFA methods ======== //
+  bool NFA::match(std::string_view input) const
   {
     // Do a dfs on the machine and check if input reaches a final state
     return this->storage[start].match(input, 0);
+  }
+
+  // Return the epsilon closure of the state
+  [[nodiscard]] std::set<internal::State*> NFA::closure(size_t state_idx)
+  {
+    return this->storage[state_idx].closure();
+  }
+
+  void NFA::print_stats() const
+  {
+    std::cout << "NFA States: " << this->storage.size() << '\n';
+  }
+
+  // ======== DFA methods ======== //
+  DFA::DFA(NFA& nfa)
+  {
+    // Copy alphabet
+    this->alphabet_ = nfa.alphabet;
+    this->start_ =
+      this->make_state(nfa.storage[nfa.start].closure()).second;
+
+    std::vector<size_t> states{this->start_};
+
+    // Build DFA States
+    while (!states.empty()) {
+      // Get the top most state
+      auto& cur_state = this->storage_[states.back()];
+      states.pop_back();
+
+      // Build transitions for current state
+      for (size_t const state_idx : cur_state.indices()) {
+        for (char const ch : nfa.alphabet) {
+          auto next_states = nfa.storage[state_idx].get_transition(ch);
+          // If there are no transitions from current state
+          if (next_states.empty()) {
+            continue;
+          }
+
+          auto step_idx = (*(next_states.begin()))->pos;
+          auto closure = nfa.closure(step_idx);
+          auto [new_state, next_idx] = make_state(closure);
+
+          // Map the transition
+          cur_state.add_transition(ch, next_idx);
+
+          // If the generated state is new, push it for further processing
+          if (new_state) {
+            states.push_back(next_idx);
+          }
+        }
+      }
+    }
+
+    // Make a trap state to gather all missed transitions
+    auto [_, trap_idx] = this->make_state({});
+    for (char const ch : this->alphabet_) {
+      this->storage_[trap_idx].add_transition(ch, trap_idx);
+    }
+
+    for (auto& state : this->storage_) {
+      for (auto const ch : this->alphabet_) {
+        if (!state.is_mapped(ch)) {
+          state.add_transition(ch, trap_idx);
+        }
+      }
+    }
+  }
+
+  bool DFA::match(std::string_view input) const
+  {
+    auto cur_state = this->storage_[this->start_];
+    // Traverse the graph till the input is exhausted
+    for (char const ch : input) {
+      size_t const next_idx = cur_state.get_transition(ch);
+      cur_state = this->storage_[next_idx];
+    }
+
+    return cur_state.final;
+  }
+
+  void DFA::print() const
+  {
+    // --- Alphabet ---
+    std::cout << "Alphabet:\n";
+    for (char const c : alphabet_) {
+      std::cout << c << ' ';
+    }
+    std::cout << "\n\n";
+
+    // --- Start state ---
+    std::cout << "Start state:\n";
+    std::cout << storage_[start_].name << "\n\n";
+
+    // --- Transition table ---
+    std::cout << "Transition table:\n";
+
+    // Header
+    std::cout << std::setw(15) << "State";
+    for (char const c : alphabet_) {
+      std::cout << std::setw(15) << c;
+    }
+    std::cout << '\n';
+
+    // Rows
+    for (auto const& state : storage_) {
+      std::cout << std::setw(15) << state.name;
+
+      for (char const c : alphabet_) {
+        auto to = state.get_transition(c);
+        std::cout << std::setw(15) << storage_[to].name;
+      }
+
+      std::cout << '\n';
+    }
+  }
+
+  void DFA::print_stats() const
+  {
+    std::cout << "DFA States: " << this->storage_.size() << '\n';
+  }
+
+  size_t DFA::get_state(std::string& name)
+  {
+    return this->state_map_[name];
+  }
+
+  std::pair<bool, size_t>
+  DFA::make_state(std::set<internal::State*> const& states)
+  {
+    // Check fi state already exists
+    auto state_name = build_name(states);
+    if (auto it = this->state_map_.find(state_name);
+        it != state_map_.end()) {
+      return {false, it->second};
+    }
+
+    // Generate indices set
+    auto state_view =
+      states |
+      std::views::transform([](auto const* state) { return state->pos; });
+    std::set<size_t> const state_ids{state_view.begin(), state_view.end()};
+
+    // Build a set and return its index
+    auto state_idx = this->storage_.size();
+
+    // Check if the state is to be marked final
+    auto state_final =
+      std::ranges::any_of(states, [](internal::State const* state) {
+        return state->final;
+      });
+
+    // Add state to storage
+    this->storage_.emplace_back(state_name, state_ids, state_final);
+
+    // Register state for future lookup
+    this->state_map_[state_name] = state_idx;
+    return {true, state_idx};
+  }
+
+  // ======== Helper methods ======== //
+  std::string build_name(std::set<internal::State*> const& states)
+  {
+    if (states.empty()) {
+      return "0";
+    }
+
+    std::stringstream name;
+    char sep = '{';
+
+    for (auto* state : states) {
+      name << sep << state->pos;
+      sep = ',';
+    }
+
+    name << '}';
+
+    return name.str();
   }
 
 }  //namespace Kalika
