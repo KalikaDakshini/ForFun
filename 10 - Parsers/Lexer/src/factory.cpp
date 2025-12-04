@@ -1,7 +1,7 @@
 #include "factory.hpp"
 #include "frag.hpp"
-#include "nfa.hpp"
 #include "processor.hpp"
+#include "state_machine.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -93,7 +93,7 @@ namespace Kalika
     void Factory::assign_names()
     {
       std::ranges::for_each(
-        this->storage, [idx = 0](NFAState& state) mutable {
+        this->storage, [idx = 0](State& state) mutable {
           state.set_name(std::to_string(idx++));
         }
       );
@@ -232,12 +232,11 @@ namespace Kalika
 
   }  //namespace internal
 
-  NFA make_nfa(std::string_view regexp)
+  StateMachine make_nfa(std::string_view regexp)
   {
     internal::Factory f;
     auto frag = f.get(regexp);
 
-    //TODO(kalika): Fix start/end indices mapping
     return {
       .storage = std::move(f.storage),
       .alphabet = std::move(frag.alphabet),

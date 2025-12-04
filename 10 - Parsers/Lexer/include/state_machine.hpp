@@ -1,5 +1,5 @@
-#ifndef NFA_H
-#define NFA_H
+#ifndef STATE_MACHINE_H
+#define STATE_MACHINE_H
 
 #include <deque>
 #include <set>
@@ -22,11 +22,11 @@ namespace Kalika
     /**
      * @brief Describes a single state of the NFA
      */
-    struct NFAState {
+    struct State {
       bool final;
       std::string name;
 
-      explicit NFAState(bool state_final = false) : final(state_final) {}
+      explicit State(bool state_final = false) : final(state_final) {}
 
       /**
        * @brief Toggle the final status of the state
@@ -44,36 +44,43 @@ namespace Kalika
       /**
        * @brief Add a transition to the state
        */
-      void add_transition(char ch, NFAState* state_idx);
-
-      /**
-       * @brief Check if state accepts input
-       */
-      bool test(std::string_view input, std::size_t idx) const;
+      void add_transition(char ch, State* state_idx);
 
       /**
        * @brief Return all transitions from a state
        */
-      [[nodiscard]] std::set<NFAState*> get_transition(char ch) const;
+      [[nodiscard]] std::set<State*> get_transition(char ch) const;
+
+      /**
+       * @brief Check if state accepts input
+       */
+      bool match(std::string_view input, std::size_t idx) const;
+
+      /**
+       * @brief Return the closure set of the current state
+       */
+      std::set<State*> closure();
 
     private:
-      umap<char, std::set<NFAState*>> transitions_;
-      std::set<size_t> closure_set_;
+      umap<char, std::set<State*>> transitions_;
+      std::set<State*> closure_set_;
     };
 
   }  //namespace internal
 
+  //TODO(kalika): Add DFA Minimization
   /**
-   * @brief Describes a NFA
+   * @brief Describes an NFA
    */
-  struct NFA {
-    std::deque<internal::NFAState> storage;
+  struct StateMachine {
+    std::deque<internal::State> storage;
     std::set<char> alphabet;
     size_t start;
     size_t end;
 
-    [[nodiscard]] bool test(std::string_view input) const;
+    [[nodiscard]] bool match(std::string_view input) const;
   };
+
 }  //namespace Kalika
 
 #endif

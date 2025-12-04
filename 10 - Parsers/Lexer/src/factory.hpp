@@ -2,8 +2,8 @@
 #define FACTORY_H
 
 #include "frag.hpp"
-#include "nfa.hpp"
 #include "processor.hpp"
+#include "state_machine.hpp"
 
 #include <deque>
 #include <string_view>
@@ -17,7 +17,7 @@ namespace Kalika
      * @brief Factory to build NFAs
      */
     struct Factory {
-      std::deque<NFAState> storage;
+      std::deque<State> storage;
       Frag get(std::string_view regex);
 
     private:
@@ -56,7 +56,7 @@ namespace Kalika
    * @brief Builds an nfa matching the regular expression
    * @param regexp regular expression in general regex format
    */
-  NFA make_nfa(std::string_view regexp);
+  StateMachine make_nfa(std::string_view regexp);
 };  //namespace Kalika
 
 #endif
