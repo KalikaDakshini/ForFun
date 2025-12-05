@@ -120,6 +120,7 @@ namespace Kalika
   }
 
   // ======== DFA methods ======== //
+  // Construct from NFA an equivalent DFA
   DFA::DFA(NFA& nfa)
   {
     // Copy alphabet
@@ -136,25 +137,30 @@ namespace Kalika
       states.pop_back();
 
       // Build transitions for current state
-      for (size_t const state_idx : cur_state.indices()) {
-        for (char const ch : nfa.alphabet) {
+      for (char const ch : nfa.alphabet) {
+        std::set<internal::State*> closure_set;
+        // Gather all transitions corresponding to an alphabet
+        for (size_t const state_idx : cur_state.indices()) {
           auto next_states = nfa.storage[state_idx].get_transition(ch);
           // If there are no transitions from current state
           if (next_states.empty()) {
             continue;
           }
 
+          // [Invariant] Assumes a single transition from a state
           auto step_idx = (*(next_states.begin()))->pos;
-          auto closure = nfa.closure(step_idx);
-          auto [new_state, next_idx] = make_state(closure);
+          closure_set.merge(nfa.closure(step_idx));
+        }
 
-          // Map the transition
-          cur_state.add_transition(ch, next_idx);
+        // Make a new state
+        auto [new_state, next_idx] = make_state(closure_set);
 
-          // If the generated state is new, push it for further processing
-          if (new_state) {
-            states.push_back(next_idx);
-          }
+        // Map the transition
+        cur_state.add_transition(ch, next_idx);
+
+        // If the generated state is new, push it for further processing
+        if (new_state) {
+          states.push_back(next_idx);
         }
       }
     }
@@ -174,6 +180,7 @@ namespace Kalika
     }
   }
 
+  // Perform match using DFA
   bool DFA::match(std::string_view input) const
   {
     auto cur_state = this->storage_[this->start_];
@@ -186,6 +193,7 @@ namespace Kalika
     return cur_state.final;
   }
 
+  // Print the DFA table
   void DFA::print() const
   {
     // --- Alphabet ---
@@ -227,11 +235,13 @@ namespace Kalika
     std::cout << "DFA States: " << this->storage_.size() << '\n';
   }
 
+  // Return the state corresponding to name
   size_t DFA::get_state(std::string& name)
   {
     return this->state_map_[name];
   }
 
+  // Make a new state from a set of NFA states
   std::pair<bool, size_t>
   DFA::make_state(std::set<internal::State*> const& states)
   {
