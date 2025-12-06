@@ -7,7 +7,7 @@
 int main(int argc, char const* argv[])
 {
   //TODO(kalika): Implement text searching (Booyer-Moore?)
-  std::string const regexp{(argc < 2) ? "(ab)+c" : argv[1]};
+  std::string const regexp{(argc < 2) ? "[1-9][0-9]*|0" : argv[1]};
   auto machine = Kalika::make_nfa(regexp);
 
   std::cout << "Regex: " << regexp << '\n';

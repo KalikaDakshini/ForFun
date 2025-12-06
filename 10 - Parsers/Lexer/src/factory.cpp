@@ -64,6 +64,18 @@ namespace Kalika
           frag_stack.push_back(concatenate(frag_a, frag_b));
           break;
         }
+        case TokenKind::RANGE: {
+          auto a = token.ranges[0].start;
+          auto b = token.ranges[0].end;
+          auto frag_class = char_class(a, b);
+          for (auto idx = 1UL; idx < token.ranges.size(); idx++) {
+            a = token.ranges[idx].start;
+            b = token.ranges[idx].end;
+            frag_class = alteration(frag_class, char_class(a, b));
+          }
+          frag_stack.push_back(frag_class);
+          break;
+        }
         case TokenKind::IF: {
           auto frag_a = frag_stack.back();
           frag_stack.pop_back();
@@ -213,7 +225,7 @@ namespace Kalika
       auto& f_start = this->storage[start_idx];
       auto& f_end = this->storage[end_idx];
 
-      assert(a < b);
+      assert(a <= b);
       Frag frag{start_idx, end_idx};
 
       for (char ch = a; ch <= b; ch++) {

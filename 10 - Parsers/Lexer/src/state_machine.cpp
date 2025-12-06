@@ -104,6 +104,13 @@ namespace Kalika
   // ======== NFA methods ======== //
   bool NFA::match(std::string_view input) const
   {
+    // Check if input is made up of alphabet set
+    for (char const ch : input) {
+      if (!this->alphabet.contains(ch)) {
+        return false;
+      }
+    }
+
     // Do a dfs on the machine and check if input reaches a final state
     return this->storage[start].match(input, 0);
   }
@@ -186,6 +193,11 @@ namespace Kalika
     auto cur_state = this->storage_[this->start_];
     // Traverse the graph till the input is exhausted
     for (char const ch : input) {
+      // Check if character is in alphabet
+      if (!alphabet_.contains(ch)) {
+        return false;
+      }
+
       size_t const next_idx = cur_state.get_transition(ch);
       cur_state = this->storage_[next_idx];
     }

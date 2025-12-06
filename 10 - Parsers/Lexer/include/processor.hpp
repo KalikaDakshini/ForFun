@@ -3,19 +3,18 @@
 
 #include <array>
 #include <cstdint>
-#include <string>
 #include <string_view>
 #include <vector>
 
 namespace Kalika
 {
 
-  enum class TokenKind : std::int8_t {
+  enum class TokenKind : std::uint8_t {
     // Ordered in order of precedence
     CHAR,    // a
     ALTER,   // a|b
     CONCAT,  // a.b
-    CLASS,   //a-z
+    RANGE,   // [a-z]
     IF,      // a?
     PLUS,    // a+
     KLEENE,  // a*
@@ -26,14 +25,22 @@ namespace Kalika
     COUNT    // Token Count
   };
 
-  constexpr auto NUM_TOKENS = static_cast<std::size_t>(TokenKind::COUNT);
+  constexpr auto NUM_TOKENS = static_cast<size_t>(TokenKind::COUNT);
 
-  //TODO(kalika): Implement Character classes [a-zA-Z]
-  //TOOD(kalika): Implement aliases \s \w etc..
+  struct CharRange {
+    char start;
+    char end;
+  };
+
+  //TODO(kalika): Implement ranges(a-z) for Character classes [a-zA-Z]
+  //TODO(kalika): Implement aliases \s \w etc..
   struct Token {
-    Token(char ch);
+    explicit Token(char ch);
+    explicit Token(std::vector<CharRange> rs, bool neg = false);
 
     char val;
+    std::vector<CharRange> ranges;
+    bool negated;
     TokenKind kind;
 
     [[nodiscard]] std::uint8_t prec() const
@@ -70,6 +77,8 @@ namespace Kalika
   std::vector<Token> process(std::string_view input);
   // Add concatenation operators to the string
   std::vector<Token> tokenize(std::string_view input);
+  // Create a token with character class
+  Token make_char_class(std::string_view input, size_t& i);
 
   // Check if character is not an operator
   bool is_char(char ch);

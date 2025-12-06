@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace Kalika
@@ -51,6 +52,7 @@ namespace Kalika
     return out;
   }
 
+  // Break input string into a set of tokens
   std::vector<Token> tokenize(std::string_view input)
   {
     std::vector<Token> tokens;
@@ -64,21 +66,22 @@ namespace Kalika
       return is_char(ch) || ch == '(' || ch == '[';
     };
 
-    auto i = 0UL;
-    while (i++ < input.length() - 1) {
-      char const a = input[i - 1];
-      char const b = input[i];
+    for (auto i = 0UL; i < input.length(); i++) {
+      char const a = input[i];
 
-      tokens.emplace_back(a);
-      // Make the implicit concatenation operator, explicit
-      if (can_end(a) && can_begin(b)) {
+      // Make the implicit binary operator explicit
+      if (!tokens.empty() &&
+          (can_end(tokens.back().val) && can_begin(a))) {
         tokens.emplace_back('.');
       }
-    }
 
-    // Push the last remaining token
-    if (!input.empty()) {
-      tokens.emplace_back(input.back());
+      // Handle character classes
+      if (a == '[') {
+        tokens.emplace_back(make_char_class(input, i));
+        continue;
+      }
+
+      tokens.emplace_back(a);
     }
 
     return tokens;
@@ -87,15 +90,12 @@ namespace Kalika
   // Token constructor
   Token::Token(char ch) : val(ch)
   {
-    switch (ch) {
+    switch (val) {
     case '|':
       kind = TokenKind::ALTER;
       break;
     case '.':
       kind = TokenKind::CONCAT;
-      break;
-    case '-':
-      kind = TokenKind::CLASS;
       break;
     case '?':
       kind = TokenKind::IF;
@@ -122,6 +122,61 @@ namespace Kalika
       kind = TokenKind::CHAR;
       break;
     }
+  }
+
+  Token::Token(std::vector<CharRange> rs, bool neg) :
+    val(']'), ranges(std::move(rs)), negated(neg), kind(TokenKind::RANGE)
+  {}
+
+  Token make_char_class(std::string_view input, size_t& i)
+  {
+    // Precondition: s[i] == '['
+    ++i;  //Consume [
+
+    bool neg = false;
+    std::vector<CharRange> ranges;
+
+    // Optional negation: [^...]
+    if (i < input.length() && input[i] == '^') {
+      neg = true;
+      ++i;
+    }
+
+    char prev = 0;
+    bool have_prev = false;
+
+    while (i < input.size()) {
+      char const c = input[i++];
+
+      // End of class.
+      if (c == ']') {
+        --i;
+        break;
+      }
+
+      // Construct range
+      if (c == '-' && have_prev && i < input.size() && input[i] != ']') {
+        // Range: prev - nextchar
+        char const hi = input[i++];
+        ranges.emplace_back(CharRange{.start = prev, .end = hi});
+        have_prev = false;
+        continue;
+      }
+
+      // Literal character
+      if (have_prev) {
+        // Push previous as single-char range
+        ranges.emplace_back(CharRange{.start = prev, .end = prev});
+      }
+      prev = c;
+      have_prev = true;
+    }
+
+    if (have_prev) {
+      ranges.emplace_back(CharRange{.start = prev, .end = prev});
+    }
+
+    return Token(ranges, neg);
   }
 
   bool is_char(char ch)
